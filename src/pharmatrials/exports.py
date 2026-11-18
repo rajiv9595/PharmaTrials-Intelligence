@@ -10,12 +10,18 @@ import pandas as pd
 
 def _flat_study(row: dict[str, Any]) -> dict[str, Any]:
     flat = dict(row)
-    for key in ("phases", "conditions", "interventions", "locations"):
-        value = flat.get(key, [])
-        flat[key] = "; ".join(
-            item if isinstance(item, str) else str(item.get("name", ""))
-            for item in value
+    flat["phases"] = "; ".join(row.get("phases", []))
+    flat["conditions"] = "; ".join(row.get("conditions", []))
+    flat["interventions"] = "; ".join(
+        " — ".join(part for part in (item.get("name"), item.get("intervention_type")) if part)
+        for item in row.get("interventions", [])
+    )
+    flat["locations"] = "; ".join(
+        ", ".join(
+            part for part in (item.get("city"), item.get("state"), item.get("country")) if part
         )
+        for item in row.get("locations", [])
+    )
     return flat
 
 
@@ -39,14 +45,15 @@ def write_exports(
         {"nct_id": row["nct_id"], **location}
         for row in records for location in row.get("locations", []) if row.get("nct_id")
     ]
+
     quality_path = output_dir / "quality_report.json"
     quality_path.write_text(json.dumps({"issues": issues}, indent=2), encoding="utf-8")
     workbook_path = output_dir / "pharma_trials_analysis.xlsx"
     with pd.ExcelWriter(workbook_path, engine="openpyxl") as writer:
         pd.DataFrame(studies).to_excel(writer, sheet_name="Studies", index=False)
-        pd.DataFrame(condition_rows, columns=["nct_id", "condition"]).to_excel(
-            writer, sheet_name="Conditions", index=False
-        )
+        pd.DataFrame(
+            condition_rows, columns=["nct_id", "condition"]
+        ).to_excel(writer, sheet_name="Conditions", index=False)
         pd.DataFrame(
             intervention_rows,
             columns=["nct_id", "name", "intervention_type", "description"],
