@@ -7,10 +7,10 @@ GROUP BY overall_status
 ORDER BY study_count DESC;
 
 -- 2. Distribution of studies by phase (multi-phase studies contribute once per phase).
-SELECT phase_value AS phase, COUNT(DISTINCT s.nct_id) AS study_count
+SELECT phase, COUNT(DISTINCT s.nct_id) AS study_count
 FROM studies AS s
-CROSS JOIN LATERAL UNNEST(s.phases) AS phase_value
-GROUP BY phase_value
+CROSS JOIN LATERAL UNNEST(s.phases) AS expanded(phase)
+GROUP BY phase
 ORDER BY study_count DESC;
 
 -- 3. Study volume by therapeutic condition.

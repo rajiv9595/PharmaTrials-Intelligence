@@ -9,6 +9,22 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: pharma_trials_test
+          POSTGRES_USER: pharma_test
+          POSTGRES_PASSWORD: pharma_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pharma_test -d pharma_trials_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://pharma_test:pharma_test@localhost:5432/pharma_trials_test
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
